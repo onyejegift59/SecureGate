@@ -26,7 +26,7 @@ Build a focused standalone authentication system using:
 - NextAuth.js
 - bcryptjs
 - Zod
-- Resend
+- Nodemailer
 - Tailwind CSS
 - Vercel
 
@@ -253,7 +253,8 @@ Required:
 DATABASE_URL=
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=
-RESEND_API_KEY=
+EMAIL_USER=
+EMAIL_PASS=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 ```

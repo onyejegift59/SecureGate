@@ -1,4 +1,5 @@
 # SECURITY.md
+
 ## SecureGate Security Architecture & Defensive Engineering Notes
 
 ---
@@ -47,7 +48,7 @@ The system prioritizes:
 
 # Authentication Security
 
-# Password Hashing
+## Password Hashing
 
 Passwords are never stored in plaintext.
 
@@ -134,7 +135,7 @@ Generic errors reduce exposed intelligence.
 
 # Email Verification Security
 
-# Verification Tokens
+## Verification Tokens
 
 Verification tokens are:
 - cryptographically secure
@@ -176,7 +177,7 @@ Without expiration:
 
 # Password Reset Security
 
-# Reset Token Security
+## Reset Token Security
 
 Password reset tokens use:
 - secure random generation
@@ -260,7 +261,7 @@ Therefore:
 
 # Rate Limiting
 
-# Brute-Force Protection
+## Brute-Force Protection
 
 Rate limiting protects:
 - login endpoints
@@ -359,6 +360,20 @@ Leaked secrets can allow attackers to:
 
 ---
 
+# Email Security (Nodemailer / Gmail SMTP)
+
+Transactional emails are sent via Nodemailer using Gmail SMTP.
+
+Security considerations:
+- credentials are stored in environment variables only
+- App Passwords are used instead of account passwords
+- SMTP credentials are never exposed to the client
+- transport initialization is lazy (no build-time credential check)
+- email failures are logged server-side with generic client-facing messages
+- no SMTP internals or stack traces are returned to the client
+
+---
+
 # HTTP Security Headers
 
 SecureGate includes defensive HTTP headers.
@@ -449,8 +464,8 @@ SecureGate is designed to reduce risk from:
 
 | Principle | Application |
 |---|---|
-| Murphy’s Law | Defensive auth handling |
-| Kerckhoffs’s Principle | Secret-based security |
+| Murphy's Law | Defensive auth handling |
+| Kerckhoffs's Principle | Secret-based security |
 | Defensive Programming | Safe validation + route protection |
 | Principle of Least Surprise | Predictable auth behavior |
 | Law of Leaky Abstractions | Understanding auth internals |

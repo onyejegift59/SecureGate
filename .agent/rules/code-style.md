@@ -33,7 +33,7 @@ src/
 ├── lib/
 │   ├── auth.ts                 # NextAuth config (authOptions)
 │   ├── db.ts                   # Prisma client singleton
-│   ├── email.ts                # Resend send helpers
+│   ├── email.ts                # Nodemailer send helpers
 │   ├── tokens.ts               # Token generation and lookup
 │   ├── ratelimit.ts            # Rate limiting logic
 │   └── validations/            # Zod schemas
@@ -162,7 +162,7 @@ Never hardcode `15` or `60` inline. Always reference the constant.
 ```ts
 // lib/env.ts (optional helper)
 // Access via process.env — never import from a file that stores them as values
-const resendKey = process.env.RESEND_API_KEY!;
+const emailUser = process.env.EMAIL_USER!;
 ```
 
 If an env var is missing, fail loudly at startup — not silently at runtime.

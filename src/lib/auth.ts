@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { db } from "./db";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -33,10 +34,6 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        if (!user.emailVerified) {
-          return null;
-        }
-
         return {
           id: user.id,
           email: user.email,
@@ -63,7 +60,13 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.emailVerified = token.emailVerified as Date | null;
+
+        const user = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: { emailVerified: true },
+        });
+
+        session.user.emailVerified = user?.emailVerified ?? null;
       }
       return session;
     },

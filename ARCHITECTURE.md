@@ -1,4 +1,5 @@
 # ARCHITECTURE.md
+
 ## SecureGate System Architecture & Design Overview
 
 ---
@@ -222,7 +223,7 @@ User submits email
 → Always return success response
 → Generate reset token
 → Store token with expiry
-→ Send email
+→ Send email via Nodemailer (Gmail SMTP)
 ```
 
 Security principle:
