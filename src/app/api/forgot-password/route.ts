@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const allowed = await checkRateLimit(ip);
     if (!allowed) {
       return NextResponse.json(
-        { message: "Too many requests. Please try again later." },
+        { message: "Too many attempts. Please try again later." },
         { status: 429 }
       );
     }
@@ -30,18 +30,31 @@ export async function POST(req: NextRequest) {
     const { email } = validated.data;
 
     const user = await db.user.findUnique({ where: { email } });
+    let devResetUrl: string | null = null;
 
     if (user) {
       try {
         const token = await generateResetToken(email);
+        const baseUrl = process.env.NEXTAUTH_URL?.replace(/\/$/, "") || "http://localhost:3000";
+        const resetUrl = `${baseUrl}/reset-password/${token}`;
+
+        devResetUrl = resetUrl;
+        console.log(`\n========================================`);
+        console.log(`[RESET LINK] ${email}`);
+        console.log(resetUrl);
+        console.log(`========================================\n`);
+
         await sendResetPasswordEmail(email, token);
-      } catch {
-        console.error("Failed to send reset email");
+      } catch (e) {
+        console.error("Failed to send reset email:", e);
       }
     }
 
     return NextResponse.json(
-      { message: "If an account exists, a reset email has been sent." },
+      {
+        message: "If an account exists, a reset email has been sent.",
+        ...(devResetUrl ? { devResetUrl } : {}),
+      },
       { status: 200 }
     );
   } catch (error) {

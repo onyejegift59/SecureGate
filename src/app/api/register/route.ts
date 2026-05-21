@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const allowed = await checkRateLimit(ip);
     if (!allowed) {
       return NextResponse.json(
-        { message: "Too many requests. Please try again later." },
+        { message: "Too many attempts. Please try again later." },
         { status: 429 }
       );
     }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "Email already registered" },
+        { message: "An account with this email already exists" },
         { status: 409 }
       );
     }

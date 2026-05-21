@@ -20,6 +20,7 @@ export function SignupForm() {
   const [success, setSuccess] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,9 +31,24 @@ export function SignupForm() {
     const formData = new FormData(e.currentTarget);
     const data = {
       name: formData.get("name") as string,
-      email: formData.get("email") as string,
+      email: (formData.get("email") as string) || "",
       password: formData.get("password") as string,
+      confirmPassword: formData.get("confirmPassword") as string,
     };
+
+    const errs: Record<string, string> = {};
+    if (!data.email.trim()) errs.email = "Please enter your email";
+    if (!data.password) errs.password = "Password must be at least 8 characters";
+    if (!data.confirmPassword) errs.confirmPassword = "Please confirm your password";
+    if (data.password && data.confirmPassword && data.password !== data.confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setLoading(false);
+      return;
+    }
 
     const res = await fetch("/api/register", {
       method: "POST",
@@ -133,7 +149,6 @@ export function SignupForm() {
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               required
-              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={fieldErrors.password}
@@ -151,8 +166,31 @@ export function SignupForm() {
           <PasswordStrength password={password} />
         </div>
 
+        <div>
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <div className="relative">
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              required
+              error={fieldErrors.confirmPassword}
+              className="pr-12"
+            />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-3 inline-flex items-center text-neutral-500 hover:text-neutral-900"
+              onClick={() => setShowConfirmPassword((value) => !value)}
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            >
+              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
         <Button type="submit" loading={loading} className="w-full">
-          Create account
+          {loading ? "Creating account..." : "Create account"}
         </Button>
       </form>
 

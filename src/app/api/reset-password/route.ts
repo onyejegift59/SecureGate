@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const allowed = await checkRateLimit(ip);
     if (!allowed) {
       return NextResponse.json(
-        { message: "Too many requests. Please try again later." },
+        { message: "Too many attempts. Please try again later." },
         { status: 429 }
       );
     }
@@ -32,12 +32,17 @@ export async function POST(req: NextRequest) {
       where: { token },
     });
 
-    if (!resetToken || resetToken.expires < new Date()) {
-      if (resetToken) {
-        await db.passwordResetToken.delete({ where: { id: resetToken.id } });
-      }
+    if (!resetToken) {
       return NextResponse.json(
-        { message: "Invalid or expired reset link" },
+        { message: "Invalid or expired reset token" },
+        { status: 400 }
+      );
+    }
+
+    if (resetToken.expires < new Date()) {
+      await db.passwordResetToken.delete({ where: { id: resetToken.id } });
+      return NextResponse.json(
+        { message: "This reset link has expired" },
         { status: 400 }
       );
     }

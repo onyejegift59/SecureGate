@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const allowed = await checkRateLimit(ip);
     if (!allowed) {
       return NextResponse.json(
-        { message: "Too many requests. Please try again later." },
+        { message: "Too many attempts. Please try again later." },
         { status: 429 }
       );
     }
@@ -31,25 +31,17 @@ export async function POST(req: NextRequest) {
 
     const user = await db.user.findUnique({ where: { email } });
 
-    if (!user) {
-      return NextResponse.json(
-        { message: "No account found with this email." },
-        { status: 404 }
-      );
+    if (user && !user.emailVerified) {
+      try {
+        const token = await generateVerificationToken(email);
+        await sendVerificationEmail(email, token);
+      } catch (e) {
+        console.error("Failed to send verification email:", e);
+      }
     }
-
-    if (user.emailVerified) {
-      return NextResponse.json(
-        { message: "This email is already verified." },
-        { status: 200 }
-      );
-    }
-
-    const token = await generateVerificationToken(email);
-    await sendVerificationEmail(email, token);
 
     return NextResponse.json(
-      { message: "Verification email sent. Please check your inbox." },
+      { message: "If an account exists, a verification email has been sent." },
       { status: 200 }
     );
   } catch (error) {

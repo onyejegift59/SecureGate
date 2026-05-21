@@ -15,6 +15,7 @@ interface ResetPasswordFormProps {
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState("");
 
@@ -22,12 +23,20 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setFieldErrors({});
 
     const formData = new FormData(e.currentTarget);
     const confirmPassword = formData.get("confirmPassword") as string;
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    const errs: Record<string, string> = {};
+    if (!password) errs.password = "Password must be at least 8 characters";
+    if (!confirmPassword) errs.confirmPassword = "Please confirm your password";
+    if (password && confirmPassword && password !== confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       setLoading(false);
       return;
     }
@@ -41,7 +50,15 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     const json = await res.json();
 
     if (!res.ok) {
-      setError(json.message || "Something went wrong");
+      if (json.errors) {
+        const errs: Record<string, string> = {};
+        for (const err of json.errors) {
+          errs[err.path[0]] = err.message;
+        }
+        setFieldErrors(errs);
+      } else {
+        setError(json.message || "Something went wrong");
+      }
       setLoading(false);
       return;
     }
@@ -73,9 +90,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             type="password"
             autoComplete="new-password"
             required
-            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            error={fieldErrors.password}
           />
           <PasswordStrength password={password} />
         </div>
@@ -88,12 +105,12 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             type="password"
             autoComplete="new-password"
             required
-            minLength={8}
+            error={fieldErrors.confirmPassword}
           />
         </div>
 
         <Button type="submit" loading={loading} className="w-full">
-          Reset password
+          {loading ? "Resetting password..." : "Reset password"}
         </Button>
       </form>
     </Card>

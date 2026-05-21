@@ -20,10 +20,9 @@ export async function POST(
 
   const allowed = await checkRateLimit(ip);
   if (!allowed) {
-    return NextResponse.json(
-      { message: "Too many requests. Please try again later." },
-      { status: 429 }
-    );
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("error", "RateLimited");
+    return NextResponse.json({ url: loginUrl.toString() }, { status: 429 });
   }
 
   return handler(req, context);

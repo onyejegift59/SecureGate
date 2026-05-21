@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 export function LoginForm() {
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -21,27 +22,54 @@ export function LoginForm() {
     if (searchParams.get("reset") === "success") {
       setSuccess("Password reset successful. You can now sign in.");
     }
-
-    if (searchParams.get("error")) {
-      setError("Invalid credentials");
-    }
   }, [searchParams]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setSuccess("");
+    setFieldErrors({});
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const email = (formData.get("email") as string) || "";
+    const password = (formData.get("password") as string) || "";
 
-    await signIn("credentials", {
-      email,
-      password,
-      callbackUrl: `${window.location.origin}/dashboard`,
-    });
+    const errs: Record<string, string> = {};
+    if (!email.trim()) errs.email = "Please enter your email";
+    if (!password) errs.password = "Please enter your password";
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setLoading(false);
+      return;
+    }
+
+    let result;
+    try {
+      result = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
+    } catch {
+      setError("Something went wrong");
+      setLoading(false);
+      return;
+    }
+
+    if (result?.error === "RateLimited") {
+      setError("Too many attempts. Please try again later.");
+      setLoading(false);
+      return;
+    }
+
+    if (result?.error) {
+      setError("Invalid credentials");
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = "/dashboard";
   }
 
   return (
@@ -66,7 +94,7 @@ export function LoginForm() {
 
         <div>
           <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <Input id="email" name="email" type="email" autoComplete="email" required error={fieldErrors.email} />
         </div>
 
         <div>
@@ -86,8 +114,8 @@ export function LoginForm() {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               required
-              minLength={8}
               className="pr-12"
+              error={fieldErrors.password}
             />
             <button
               type="button"
@@ -101,7 +129,7 @@ export function LoginForm() {
         </div>
 
         <Button type="submit" loading={loading} className="w-full">
-          Sign in
+          {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
 

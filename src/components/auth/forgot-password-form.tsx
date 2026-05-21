@@ -9,33 +9,51 @@ import { Card } from "@/components/ui/card";
 
 export function ForgotPasswordForm() {
   const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [devResetUrl, setDevResetUrl] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setFieldError("");
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string) || "";
 
-    const res = await fetch("/api/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-      setError(json.message || "Something went wrong");
+    if (!email.trim()) {
+      setFieldError("Please enter your email");
       setLoading(false);
       return;
     }
 
-    setSent(true);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const json = await res.json();
+
+      if (res.status === 429) {
+        setError(json.message || "Too many attempts. Please try again later.");
+        setLoading(false);
+        return;
+      }
+
+      if (json.devResetUrl) {
+        setDevResetUrl(json.devResetUrl);
+      }
+
+      setSent(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (sent) {
@@ -51,6 +69,17 @@ export function ForgotPasswordForm() {
           <p className="mt-2 text-sm text-neutral-500">
             If an account exists, we sent a password reset link.
           </p>
+          {devResetUrl && (
+            <div className="mt-4 rounded-md bg-neutral-100 p-3 text-left">
+              <p className="text-xs font-medium text-neutral-500">DEV MODE — Reset URL</p>
+              <a
+                href={devResetUrl}
+                className="mt-1 block text-sm text-blue-600 underline break-all"
+              >
+                {devResetUrl}
+              </a>
+            </div>
+          )}
           <Button onClick={() => window.location.href = "/login"} className="mt-6 w-full">
             Back to login
           </Button>
@@ -77,11 +106,11 @@ export function ForgotPasswordForm() {
 
         <div>
           <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <Input id="email" name="email" type="email" autoComplete="email" required error={fieldError} />
         </div>
 
         <Button type="submit" loading={loading} className="w-full">
-          Send reset link
+          {loading ? "Sending reset link..." : "Send reset link"}
         </Button>
       </form>
 
